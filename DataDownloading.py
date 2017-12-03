@@ -62,7 +62,7 @@ def parse_championship(page):
 					if current_game:
 						games.append((current_game,current_round,current_day))
 					current_game = []
-					current_day = line.strip('[]')
+					current_day = line.strip(' []\n\t')
 				else:
 					score = re.search('[0-9]*-[0-9]*',line)
 					if score:
@@ -72,6 +72,10 @@ def parse_championship(page):
 						current_game = [line]
 					else:
 						current_game.append(line)
+	if current_game:
+		games.append((current_game,current_round,current_day))
+	current_game = []
+	current_round = 0
 
 
 	return games
@@ -161,7 +165,7 @@ class Game():
 					self.goals_away[k].player = self.goals_away[k-1].player
 
 def sanitize_teamname(name):
-	team = name.strip()
+	team = name.strip(' ()[]\n\t')
 	delimiters = ['(','[']
 	while any([x in team for x in delimiters]):
 		for delim in delimiters:
@@ -180,3 +184,38 @@ class Goal():
 			self.player = ' '.join([x.strip() for x in split[:-1]])
 		except IndexError:
 			print(line)
+
+def manual_parser():
+
+	encodings = {}
+	encodings['BRA1_2017'] = 'utf-8'
+	encodings['BRA1_2016'] = 'iso-8859-1'
+	encodings['BRA1_2015'] = 'iso-8859-1'
+	encodings['BRA1_2013'] = 'iso-8859-1'
+	encodings['BRA1_2012'] = 'iso-8859-1'
+	encodings['BRA1_2011'] = 'iso-8859-1'
+	encodings['BRA1_2010'] = 'iso-8859-1'
+	encodings['BRA1_2009'] = 'iso-8859-1'
+	encodings['BRA1_2008'] = 'iso-8859-1'
+	encodings['BRA1_2007'] = 'iso-8859-1'
+	encodings['BRA1_2006'] = 'iso-8859-1'
+	encodings['BRA1_2005'] = 'iso-8859-1'
+	encodings['BRA1_2004'] = 'iso-8859-1'
+	encodings['BRA1_2003'] = 'iso-8859-1'
+
+	encodings['BRA2_2017'] = 'utf-8'
+	encodings['BRA2_2016'] = 'iso-8859-1'
+	encodings['BRA2_2015'] = 'iso-8859-1'
+	encodings['BRA2_2013'] = 'iso-8859-1'
+	encodings['BRA2_2012'] = 'iso-8859-1'
+	encodings['BRA2_2011'] = 'iso-8859-1'
+	encodings['BRA2_2010'] = 'iso-8859-1'
+	encodings['BRA2_2009'] = 'iso-8859-1'
+
+	data = {}
+	for label,method in encodings.items():
+		with open('Data_html/'+label+'.htm','rb') as f:
+			text = f.readlines()
+		data[label] = parse_championship([x.decode(method) for x in text])
+
+	return data

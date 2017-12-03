@@ -34,13 +34,16 @@ class Team():
 			pass
 
 def parse_championship(page):
-	line_types = ['blank','new_round','new_day','new_game']
+	# line_types = ['blank','new_round','new_day','new_game']
 	current_round = 0
 	current_day = 0
 	current_game = []
 	games = []
 
-	for line in page:
+	for line_raw in page:
+		line = line_raw.strip('\n\t')
+		if ' canc ' in line or 'cancelado' in line or 'abandoned' in line:
+			continue
 		if not line:
             # Line type is 'blank'
 			if current_game:
@@ -64,14 +67,15 @@ def parse_championship(page):
 					current_game = []
 					current_day = line.strip(' []\n\t')
 				else:
-					score = re.search('[0-9]*-[0-9]*',line)
+					score = re.search('[0-9]+-[0-9]+',line)
 					if score:
                         # Line type is 'new_game'
 						if current_game:
 							games.append((current_game,current_round,current_day))
 						current_game = [line]
 					else:
-						current_game.append(line)
+						if len(current_game):
+							current_game.append(line)
 	if current_game:
 		games.append((current_game,current_round,current_day))
 	current_game = []
@@ -216,6 +220,24 @@ def manual_parser():
 	for label,method in encodings.items():
 		with open('Data_html/'+label+'.htm','rb') as f:
 			text = f.readlines()
-		data[label] = parse_championship([x.decode(method) for x in text])
+		# text = '\n'.join([x.decode(method) for x in text])
+		# lines = text.split('\n')
+		# print(lines)
+		lines = [x.decode(method) for x in text]
+		data[label] = parse_championship(lines)
 
 	return data
+
+def check_data(data):
+	for label,value in data.items():
+		for rnd in range(1,39):
+			games = [x for x in value if x[1]==rnd]
+
+			if label[3]=='1' and int(label[-4:])>=2006 and len(games)!=10:
+				print('{} R{} {}'.format(label,rnd,len(games)))
+			if label[3]=='1' and int(label[-4:])==2005 and len(games)!=11:
+				print('{} R{} {}'.format(label,rnd,len(games)))
+			if label[3]=='1' and int(label[-4:]) in [2003,2004] and len(games)!=12:
+				print('{} R{} {}'.format(label,rnd,len(games)))
+			if label[3]=='2' and int(label[-4:])>=2006 and int(label[-4:])!=2016 and len(games)!=10:
+				print('{} R{} {}'.format(label,rnd,len(games)))

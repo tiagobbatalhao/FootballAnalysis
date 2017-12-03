@@ -78,23 +78,30 @@ def main():
     else:
         database = sqlite3.Connection(database_filename)
 
-        # First Division
-        for year in range(2003,2018):
-            url_string = 'http://www.rsssfbrasil.com/tablesae/br{:04d}.htm'.format(year)
-            base_id = 'BRA{:04d}1'.format(year) +'{:03d}'
-            championship_name = 'BRA_{:04d}_1'.format(year)
-            try:
-                save_championship(database,url_string,base_id,championship_name)
-            except:
-                print('Problem with {:04d}'.format(year))
+    for label,games in donwload_module.manual_parser().items():
+        division = int(label[3])
+        year = int(label[-4:])
+        base_id = 'BRA{:01d}{:04d}'.format(division,year) +'{:03d}'
+        championship_name = 'BRA_{:01d}_{:04d}'.format(division,year)
+        save_championship(database,games,base_id,championship_name)
+
+        #
+        #     championship_name = 'BRA_{:04d}_1'.format(year)
+        #
+        #
+        # # First Division
+        # for year in range(2003,2018):
+        #     url_string = 'http://www.rsssfbrasil.com/tablesae/br{:04d}.htm'.format(year)
+        #     try:
+        #         save_championship(database,url_string,base_id,championship_name)
+        #     except:
+        #         print('Problem with {:04d}'.format(year))
 
 
 
 
-def save_championship(database,url_string,base_id,championship_name):
-        championship = donwload_module.donwload_championship(url_string)
-        championship = donwload_module.parse_championship(championship)
-        games = [donwload_module.Game(*x) for x in championship]
+def save_championship(database,games,base_id,championship_name):
+        games = [donwload_module.Game(*x) for x in games]
         for k,game in enumerate(games):
             idd = {'match_id': base_id.format(k)}
             update = convert_game_to_dict(game,2017)
